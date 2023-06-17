@@ -24,8 +24,10 @@ admins           =readFileOrCreateNew('adminsID.txt')         #read list of acti
 adminsNew        =readFileOrCreateNew('adminsNewID.txt')      #read list of admins applicant
 applicantNew     =readFileOrCreateNew('newApplicantID.txt')   #read list of new job applicant
 
-ADMIN_MENU=".\nМожешь добавлять меня в любые группы.\nПо команде /sendall отправлю сообщение во все группы в которые был добавлен ранее.\n /updatenews обновит новость для рассылки. Формат: \n/updatenews Какая-то новость\n/shownews покажет текущую сохраненную новость.\n/showApplicants покажет список желающих поджобать, а /clearApplicants очистит его, будь внимателен."
+ADMIN_MENU=".\nМожешь добавлять меня в любые группы.\nПо команде /addNews Добавит новую новость.\nПо команде /deleteNews * Удалит новость с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые был добавлен ранее.\n /updatenews * обновит указанную новость для рассылки. Формат: \n/updatenews НОМЕР Какая-то новость\n/shownews покажет список новостей.\n/showApplicants покажет список желающих поджобать, а /clearApplicants очистит его, будь внимателен."
 WORKER_MENU=".\nХочешь работать у нас? Жми /wantjob и наш менеджер свяжется с тобой!"
+
+NEWS_SEPARATOR="<!----END NEWS----!>"
 
 #read string with news message
 try:
@@ -37,7 +39,7 @@ except IOError:
     news_file=open('chatNews.txt','r', encoding="utf-8")
 news=news_file.read()
 news_file.close
-
+news_array=news.split(NEWS_SEPARATOR)
 
 def NotElInArr(arr,ell):
     for cEl in arr:
@@ -81,10 +83,19 @@ def clearApplicantsFN():
 
 
 
-def updateNews(newNews):
+def updateNews():
     news_file=open('chatNews.txt','w', encoding="utf-8")
-    news_file.write(newNews)
+    news=NEWS_SEPARATOR.join(news_array)
+    news_file.write(news)
     news_file.close()
+
+def newsArrayToString():
+    resoult=""
+    for idx, eachNews in enumerate(news_array):
+        resoult=resoult+"Новость: "+str(idx+1)+"\n"+eachNews+"\n\n"
+    return resoult
+
+
 
 
 
@@ -101,19 +112,54 @@ async def start(message: types.Message):
 async def updatenews(message: types.Message):
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
         text=message.text[12:]
-        if text!="":
-            print("News updated.")
-            updateNews(text)
-            global news
-            news=text
-            await message.reply("Новость успешно изменена на: "+news)
+        numOfNews=text.split(" ")
+        global news_array        
+        if numOfNews[0]!="" and numOfNews[1]!="" and int(numOfNews[0])>0 and int(numOfNews[0])<=len(news_array):
+            stringRightAfterNewsIndex=text[len(numOfNews[0])+1:]
+            news_array[int(numOfNews[0])-1]=stringRightAfterNewsIndex
+            print("News" +str(numOfNews[0])+"updated.")
+            updateNews()
+            await message.reply("Новость успешно изменена на: "+stringRightAfterNewsIndex)
         else:
-            await message.reply("Новость не может быть пустой. Пример команды: \n/updatenews Какая-то новость.")
+            await message.reply("Новость и/или её номер не могут быть пустыми. Пример команды: \n/updatenews 1 Какая-то новость.")
+
+@dp.message_handler(commands=['deleteNews'])
+async def deletenews(message: types.Message):
+    if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
+        text=message.text[12:]
+        global news_array        
+        if text!="" and int(text)>0 and int(text)<=len(news_array):
+            news_array.pop(int(text)-1)
+            print("News" +text+"deleted.")
+            updateNews()
+            await message.reply("Новость успешно удалена.")
+        else:
+            await message.reply("Номер новости не может быть пустым и или больше имеющегося числа новостей. Пример команды: \n/deleteNews 1")
+
+
+
+@dp.message_handler(commands=['addNews'])
+async def addnews(message: types.Message):
+    if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
+        text=message.text[9:]
+        if text!="":
+            print("News added.")
+            global news_array
+            news_array.append(text)
+            updateNews()
+            #global news
+            #news=text
+            await message.reply("Добавлена новость: "+news)
+        else:
+            await message.reply("Новость не может быть пустой. Пример команды: \n/addNews Какая-то новость.")
+
+
+
 
 @dp.message_handler(commands=['shownews'])
 async def shownews(message: types.Message):
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
-        await bot.send_message(message.from_user.id,news)
+        await bot.send_message(message.from_user.id,newsArrayToString())
         await bot.send_message(message.from_user.id,message.from_user.full_name+ADMIN_MENU)
 
 
@@ -184,14 +230,24 @@ async def send_welcome(message: types.Message):
             
             
 @dp.message_handler(commands=['sendall'])
-async def start(message: types.Message):
+async def start(message: types.Message):    
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False ):
-        for lineEl in lines:
-            await bot.send_message(lineEl,news)
-            await bot.send_message(message.from_user.id,message.from_user.full_name+ADMIN_MENU)
+        text=message.text[9:]
+        global news_array
+        if text!="" and int(text)>0 and int(text)<=len(news_array):
+            for lineEl in lines:
+                print("News "+ text + " weare sended to grpous.")
+                print(news_array[int(text)-1])
+                await bot.send_message(lineEl,news)
+                await bot.send_message(message.from_user.id,message.from_user.full_name+ADMIN_MENU)
+        else:
+            await message.reply("Номер новости не может быть пустым и или больше имеющегося числа новостей. Пример команды: \n/sendall 1")            
 
 
 
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
+
+
+
