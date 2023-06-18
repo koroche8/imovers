@@ -5,7 +5,9 @@ class Settings(BaseSettings):
     # Желательно вместо str использовать SecretStr 
     # для конфиденциальных данных, например, токена бота
     bot_token: SecretStr
-
+    tg_user_api_id: SecretStr
+    tg_user_api_hash: SecretStr
+    tg_user_api_name: SecretStr
     # Вложенный класс с дополнительными указаниями для настроек
     class Config:
         # Имя файла, откуда будут прочитаны данные 

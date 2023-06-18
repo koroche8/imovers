@@ -1,11 +1,20 @@
 from aiogram import Bot, Dispatcher, executor, types
 from config_reader import config
+from telethon import TelegramClient
 
+#from tgclient import sendNews
+#import os
 
+BOT_TOKEN=config.bot_token.get_secret_value()
+TG_USER_API_ID=config.tg_user_api_id.get_secret_value()
+TG_USER_API_HASH=config.tg_user_api_hash.get_secret_value()
+TG_USER_API_NAME=config.tg_user_api_name.get_secret_value()
 
-bot=Bot(token=config.bot_token.get_secret_value())
+bot=Bot(token=BOT_TOKEN)
+
 
 dp=Dispatcher(bot)
+
 
 def readFileOrCreateNew(fileName):
     try:
@@ -24,7 +33,7 @@ admins           =readFileOrCreateNew('adminsID.txt')         #read list of acti
 adminsNew        =readFileOrCreateNew('adminsNewID.txt')      #read list of admins applicant
 applicantNew     =readFileOrCreateNew('newApplicantID.txt')   #read list of new job applicant
 
-ADMIN_MENU=".\nМожешь добавлять меня в любые группы.\nПо команде /addNews Добавит новую новость.\nПо команде /deleteNews * Удалит новость с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые был добавлен ранее.\n /updatenews * обновит указанную новость для рассылки. Формат: \n/updatenews НОМЕР Какая-то новость\n/shownews покажет список новостей.\n/showApplicants покажет список желающих поджобать, а /clearApplicants очистит его, будь внимателен."
+ADMIN_MENU=".\nПо команде /addnews бот добавит новую новость.\nПо команде /deletenews * Удалит новость с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые добавленая учетная запись рассыльщика. Если номер ну указан будут разосланы все вакансии.\n /updatenews * обновит указанную новость для рассылки. Формат: \n/updatenews НОМЕР Какая-то новость\n/shownews покажет список новостей.\n/showApplicants покажет список желающих поджобать, а /clearApplicants очистит его, будь внимателен."
 WORKER_MENU=".\nХочешь работать у нас? Жми /wantjob и наш менеджер свяжется с тобой!"
 
 NEWS_SEPARATOR="<!----END NEWS----!>"
@@ -123,7 +132,7 @@ async def updatenews(message: types.Message):
         else:
             await message.reply("Новость и/или её номер не могут быть пустыми. Пример команды: \n/updatenews 1 Какая-то новость.")
 
-@dp.message_handler(commands=['deleteNews'])
+@dp.message_handler(commands=['deletenews'])
 async def deletenews(message: types.Message):
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
         text=message.text[12:]
@@ -138,7 +147,7 @@ async def deletenews(message: types.Message):
 
 
 
-@dp.message_handler(commands=['addNews'])
+@dp.message_handler(commands=['addnews'])
 async def addnews(message: types.Message):
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
         text=message.text[9:]
@@ -209,7 +218,6 @@ async def start(message: types.Message):
 @dp.message_handler(commands=['wantjob'])
 async def start(message: types.Message):
     if message.chat.type == 'private':
-            #addApplicationNewID(message.from_user.url)
             addApplicationNewID(message.from_user.mention)
             await bot.send_message(message.from_user.id,"Спасибо за заявку, "+message.from_user.full_name+". Наш менеджер свяжется с вами в ближайшее время.")
             await bot.send_message(message.from_user.id,message.from_user.full_name+WORKER_MENU)
@@ -228,20 +236,34 @@ async def send_welcome(message: types.Message):
             print("Edded in new group:"+str(message.chat.id))
             addChatID(message.chat.id)
             
-            
+
+
+
+
 @dp.message_handler(commands=['sendall'])
 async def start(message: types.Message):    
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False ):
         text=message.text[9:]
         global news_array
-        if text!="" and int(text)>0 and int(text)<=len(news_array):
-            for lineEl in lines:
-                print("News "+ text + " weare sended to grpous.")
-                print(news_array[int(text)-1])
-                await bot.send_message(lineEl,news)
-                await bot.send_message(message.from_user.id,message.from_user.full_name+ADMIN_MENU)
+        if text!="" and int(text)>0 and int(text)<=len(news_array):                                 #send one news
+            print("News "+ text + " weare sended to grpous.")
+            newsText=news_array[int(text)-1];
+            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH) as client:
+                await client.send_message('me', 'Starting sending news:\n'+newsText)
+                async for dialog in client.iter_dialogs():
+                    if dialog.is_group:
+                        await client.send_message(dialog.name, newsText)
+        elif text=="":                                                                              #send all news
+            print("All news weare sended to grpous.")
+            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH) as client:
+                 for newsText in news_array:
+                    await client.send_message('me', 'Starting sending news:\n'+newsText)
+                    async for dialog in client.iter_dialogs():
+                        if dialog.is_group:
+                            await client.send_message(dialog.name, newsText)
+        
         else:
-            await message.reply("Номер новости не может быть пустым и или больше имеющегося числа новостей. Пример команды: \n/sendall 1")            
+            await message.reply("Номер новости не может быть больше имеющегося числа новостей. Пример команды: \n/sendall 1")            
 
 
 
