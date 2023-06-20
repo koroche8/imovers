@@ -33,7 +33,7 @@ admins           =readFileOrCreateNew('adminsID.txt')         #read list of acti
 adminsNew        =readFileOrCreateNew('adminsNewID.txt')      #read list of admins applicant
 applicantNew     =readFileOrCreateNew('newApplicantID.txt')   #read list of new job applicant
 
-ADMIN_MENU=".\nПо команде /addnews бот добавит новую вакансию.\nПо команде /deletenews * Удалит вакансию с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые добавленая учетная запись рассыльщика. Если номер не указан будут разосланы все вакансии.\n /updatenews * обновит указанную вакансию для рассылки. Формат: \n/updatenews НОМЕР Текст новой вакансии\n/shownews покажет список вакансий.\n/showApplicants покажет список желающих поработать, а /clearApplicants очистит его, будь внимателен."
+ADMIN_MENU=".\nПо команде /addnews бот добавит новую вакансию.\nПо команде /deletenews * удалит вакансию с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые добавленая учетная запись рассыльщика. Если номер не указан будут разосланы все вакансии.\n /updatenews * обновит указанную вакансию для рассылки. Формат: \n/updatenews НОМЕР Текст новой вакансии\n/shownews покажет список вакансий.\n/showApplicants покажет список желающих поработать, а /clearApplicants очистит его, будь внимателен."
 WORKER_MENU=".\nХочешь работать у нас? Жми /wantjob и наш менеджер свяжется с тобой!"
 
 NEWS_SEPARATOR="<!----END NEWS----!>"
@@ -263,7 +263,7 @@ async def start(message: types.Message):
                             await client.send_message(dialog.name, newsText)
         
         else:
-            await message.reply("Номер вакансии не может быть больше имеющегося числа вакансий. Пример команды: \n/sendall 1")            
+            await message.reply("Номер вакансии не может быть больше имеющегося числа вакансий. Пример команды: \n/sendall 1")
 
 
 
