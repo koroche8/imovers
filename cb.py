@@ -33,7 +33,7 @@ admins           =readFileOrCreateNew('adminsID.txt')         #read list of acti
 adminsNew        =readFileOrCreateNew('adminsNewID.txt')      #read list of admins applicant
 applicantNew     =readFileOrCreateNew('newApplicantID.txt')   #read list of new job applicant
 
-ADMIN_MENU=".\nПо команде /addnews бот добавит новую новость.\nПо команде /deletenews * Удалит новость с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые добавленая учетная запись рассыльщика. Если номер ну указан будут разосланы все вакансии.\n /updatenews * обновит указанную новость для рассылки. Формат: \n/updatenews НОМЕР Какая-то новость\n/shownews покажет список новостей.\n/showApplicants покажет список желающих поджобать, а /clearApplicants очистит его, будь внимателен."
+ADMIN_MENU=".\nПо команде /addnews бот добавит новую вакансию.\nПо команде /deletenews * Удалит вакансию с указаным номером.\nПо команде /sendall * отправлю сообщение c указанным номером во все группы в которые добавленая учетная запись рассыльщика. Если номер не указан будут разосланы все вакансии.\n /updatenews * обновит указанную вакансию для рассылки. Формат: \n/updatenews НОМЕР Текст новой вакансии\n/shownews покажет список вакансий.\n/showApplicants покажет список желающих поработать, а /clearApplicants очистит его, будь внимателен."
 WORKER_MENU=".\nХочешь работать у нас? Жми /wantjob и наш менеджер свяжется с тобой!"
 
 NEWS_SEPARATOR="<!----END NEWS----!>"
@@ -43,7 +43,7 @@ try:
     news_file=open('chatNews.txt','r', encoding="utf-8")
 except IOError:
     news_file=open('chatNews.txt','w', encoding="utf-8")
-    news_file.write("Какие-то новости для группы\nОбновить можно через бот и его команду /updatenews.")
+    news_file.write("Какие-то вакансии для группы\nОбновить можно через бот и его команду /updatenews.")
     news_file.close()
     news_file=open('chatNews.txt','r', encoding="utf-8")
 news=news_file.read()
@@ -101,7 +101,7 @@ def updateNews():
 def newsArrayToString():
     resoult=""
     for idx, eachNews in enumerate(news_array):
-        resoult=resoult+"Новость: "+str(idx+1)+"\n"+eachNews+"\n\n"
+        resoult=resoult+"Вакансия: "+str(idx+1)+"\n"+eachNews+"\n\n"
     return resoult
 
 
@@ -128,9 +128,9 @@ async def updatenews(message: types.Message):
             news_array[int(numOfNews[0])-1]=stringRightAfterNewsIndex
             print("News" +str(numOfNews[0])+"updated.")
             updateNews()
-            await message.reply("Новость успешно изменена на: "+stringRightAfterNewsIndex)
+            await message.reply("Вакансия успешно изменена на: "+stringRightAfterNewsIndex)
         else:
-            await message.reply("Новость и/или её номер не могут быть пустыми. Пример команды: \n/updatenews 1 Какая-то новость.")
+            await message.reply("Вакансия и/или её номер не могут быть пустыми. Пример команды: \n/updatenews 1 Какая-то вакансия.")
 
 @dp.message_handler(commands=['deletenews'])
 async def deletenews(message: types.Message):
@@ -141,9 +141,9 @@ async def deletenews(message: types.Message):
             news_array.pop(int(text)-1)
             print("News" +text+"deleted.")
             updateNews()
-            await message.reply("Новость успешно удалена.")
+            await message.reply("Вакансия успешно удалена.")
         else:
-            await message.reply("Номер новости не может быть пустым и или больше имеющегося числа новостей. Пример команды: \n/deleteNews 1")
+            await message.reply("Номер вакансии не может быть пустым и или больше имеющегося числа вакансий. Пример команды: \n/deleteNews 1")
 
 
 
@@ -158,9 +158,9 @@ async def addnews(message: types.Message):
             updateNews()
             #global news
             #news=text
-            await message.reply("Добавлена новость: "+news)
+            await message.reply("Добавлена вакансия: "+news)
         else:
-            await message.reply("Новость не может быть пустой. Пример команды: \n/addNews Какая-то новость.")
+            await message.reply("Вакансия не может быть пустой. Пример команды: \n/addNews Какая-то вакансия.")
 
 
 
@@ -263,7 +263,7 @@ async def start(message: types.Message):
                             await client.send_message(dialog.name, newsText)
         
         else:
-            await message.reply("Номер новости не может быть больше имеющегося числа новостей. Пример команды: \n/sendall 1")            
+            await message.reply("Номер вакансии не может быть больше имеющегося числа вакансий. Пример команды: \n/sendall 1")            
 
 
 
