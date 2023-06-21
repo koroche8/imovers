@@ -98,11 +98,6 @@ def updateNews():
     news_file.write(news)
     news_file.close()
 
-def newsArrayToString():
-    resoult=""
-    for idx, eachNews in enumerate(news_array):
-        resoult=resoult+"Вакансия: "+str(idx+1)+"\n"+eachNews+"\n\n"
-    return resoult
 
 
 
@@ -156,9 +151,7 @@ async def addnews(message: types.Message):
             global news_array
             news_array.append(text)
             updateNews()
-            #global news
-            #news=text
-            await message.reply("Добавлена вакансия: "+news)
+            await message.reply("Добавлена вакансия: \n"+text)
         else:
             await message.reply("Вакансия не может быть пустой. Пример команды: \n/addNews Какая-то вакансия.")
 
@@ -168,7 +161,9 @@ async def addnews(message: types.Message):
 @dp.message_handler(commands=['shownews'])
 async def shownews(message: types.Message):
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False):
-        await bot.send_message(message.from_user.id,newsArrayToString())
+        for idx, eachNews in enumerate(news_array):
+            newsText="Вакансия: "+str(idx+1)+"\n"+eachNews+"\n\n"
+            await bot.send_message(message.from_user.id,newsText)
         await bot.send_message(message.from_user.id,message.from_user.full_name+ADMIN_MENU)
 
 
@@ -265,6 +260,19 @@ async def start(message: types.Message):
         else:
             await message.reply("Номер вакансии не может быть больше имеющегося числа вакансий. Пример команды: \n/sendall 1")
 
+
+
+
+async def start():
+    await client.send_message('me', 'Starting!')
+
+#    async for dialog in client.iter_dialogs():
+#        if dialog.is_group:
+#            await client.send_message(dialog.name, text)
+
+
+with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH) as client:
+   client.loop.run_until_complete(start())
 
 
 

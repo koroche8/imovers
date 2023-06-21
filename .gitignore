@@ -1,0 +1,9 @@
+
+*.env
+__pycache__/config_reader.cpython-310.pyc
+anything.session
+chatNews.txt
+readme.txt
+chatNews.txt
+chatNews.txt
+__pycache__/config_reader.cpython-310.pyc
