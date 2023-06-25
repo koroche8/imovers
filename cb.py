@@ -2,8 +2,6 @@ from aiogram import Bot, Dispatcher, executor, types
 from config_reader import config
 from telethon import TelegramClient
 
-#from tgclient import sendNews
-#import os
 
 BOT_TOKEN=config.bot_token.get_secret_value()
 TG_USER_API_ID=config.tg_user_api_id.get_secret_value()
@@ -243,14 +241,14 @@ async def start(message: types.Message):
         if text!="" and int(text)>0 and int(text)<=len(news_array):                                 #send one news
             print("News "+ text + " weare sended to grpous.")
             newsText=news_array[int(text)-1];
-            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH) as client:
+            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
                 await client.send_message('me', 'Starting sending news:\n'+newsText)
                 async for dialog in client.iter_dialogs():
                     if dialog.is_group:
                         await client.send_message(dialog.name, newsText)
         elif text=="":                                                                              #send all news
             print("All news weare sended to grpous.")
-            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH) as client:
+            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
                  for newsText in news_array:
                     await client.send_message('me', 'Starting sending news:\n'+newsText)
                     async for dialog in client.iter_dialogs():
@@ -271,7 +269,7 @@ async def start():
 #            await client.send_message(dialog.name, text)
 
 
-with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH) as client:
+with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
    client.loop.run_until_complete(start())
 
 
