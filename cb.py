@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher, executor, types
 from config_reader import config
 from telethon import TelegramClient
 
+import asyncio
 
 BOT_TOKEN=config.bot_token.get_secret_value()
 TG_USER_API_ID=config.tg_user_api_id.get_secret_value()
@@ -200,7 +201,7 @@ async def viewgroups(message: types.Message):
 
 
 @dp.message_handler(commands=['godmode'])
-async def start(message: types.Message):
+async def godmode(message: types.Message):
     if message.chat.type == 'private':
         text=message.text[9:]
         if text=="123":
@@ -209,7 +210,7 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(commands=['wantjob'])
-async def start(message: types.Message):
+async def wantjob(message: types.Message):
     if message.chat.type == 'private':
             addApplicationNewID(message.from_user.mention)
             await bot.send_message(message.from_user.id,"Спасибо за заявку, "+message.from_user.full_name+". Наш менеджер свяжется с вами в ближайшее время.")
@@ -220,7 +221,7 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(content_types=['new_chat_members'])
-async def send_welcome(message: types.Message):
+async def new_chat_members(message: types.Message):
     bot_obj = await bot.get_me()
     bot_id = bot_obj.id
     for chat_member in message.new_chat_members:
@@ -234,7 +235,7 @@ async def send_welcome(message: types.Message):
 
 
 @dp.message_handler(commands=['sendall'])
-async def start(message: types.Message):    
+async def sendall(message: types.Message):    
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False ):
         text=message.text[9:]
         global news_array
@@ -245,7 +246,18 @@ async def start(message: types.Message):
                 await client.send_message('me', 'Starting sending news:\n'+newsText)
                 async for dialog in client.iter_dialogs():
                     if dialog.is_group:
-                        await client.send_message(dialog.name, newsText)
+                        print("sending news to dialog.name "+dialog.name)
+                        await bot.send_message(message.from_user.id,'Sending to: '+dialog.name+"\n")
+                        await asyncio.sleep(1) 
+                        try:
+                            await client.send_message(dialog.name, newsText)
+                            await bot.send_message(message.from_user.id,'Sended\n')
+                            print('Sended.')
+                        except Exception as e:
+                            await bot.send_message(message.from_user.id,f'Error: {e}\n')
+                            print(f'Error during sending : {e}')
+
+
         elif text=="":                                                                              #send all news
             print("All news weare sended to grpous.")
             async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
@@ -253,7 +265,17 @@ async def start(message: types.Message):
                     await client.send_message('me', 'Starting sending news:\n'+newsText)
                     async for dialog in client.iter_dialogs():
                         if dialog.is_group:
-                            await client.send_message(dialog.name, newsText)
+                            print("sending news to dialog.name"+dialog.name)                          
+                            await bot.send_message(message.from_user.id,'Sended to: '+dialog.name+"\n")
+                            await asyncio.sleep(1) 
+                            try:
+                                await client.send_message(dialog.name, newsText)
+                                await bot.send_message(message.from_user.id,'Sended\n')
+                                print('Sended.')
+                            except Exception as e:
+                                await bot.send_message(message.from_user.id,f'Error: {e}\n')
+                                print(f'Error during sending : {e}')
+
         
         else:
             await message.reply("Номер вакансии не может быть больше имеющегося числа вакансий. Пример команды: \n/sendall 1")
@@ -261,16 +283,18 @@ async def start(message: types.Message):
 
 
 
+
+
 async def start():
     await client.send_message('me', 'Starting!')
 
-#    async for dialog in client.iter_dialogs():
-#        if dialog.is_group:
-#            await client.send_message(dialog.name, text)
+
 
 
 with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
    client.loop.run_until_complete(start())
+
+
 
 
 
