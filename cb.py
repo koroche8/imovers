@@ -239,14 +239,49 @@ async def sendall(message: types.Message):
     if (message.chat.type == 'private' and NotElInArr(admins,message.from_user.id) == False ):
         text=message.text[9:]
         global news_array
+        global client
         if text!="" and int(text)>0 and int(text)<=len(news_array):                                 #send one news
             print("News "+ text + " weare sended to grpous.")
+            if not await allreadyConneted():
+                await start()
+
+            #await asyncio.sleep(3) 
+
             newsText=news_array[int(text)-1];
-            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
+            await client.send_message('me', 'Starting sending news:\n'+newsText)
+            previusGroupName=""
+            async for dialog in client.iter_dialogs():
+                #print("+++dialog.name"+dialog.name)
+                if dialog.is_group and not previusGroupName==dialog.name:
+                    #print("----dialog.name"+dialog.name)
+                    previusGroupName=dialog.name
+                    #print("sending news to dialog.name "+dialog.name)
+                    await bot.send_message(message.from_user.id,'Sending to: '+dialog.name+"\n")
+                    await asyncio.sleep(1) 
+                    try:
+                        await client.send_message(dialog.name, newsText)
+                        await bot.send_message(message.from_user.id,'Sended\n')
+                        print('Sended.')
+                    except Exception as e:
+                        await bot.send_message(message.from_user.id,f'Error: {e}\n')
+                        if str(e)[:10]=="A wait of ":
+                           delayS=int(str(e)[10:].split(" ")[0])
+                           sendLaterTast = asyncio.create_task(sendNewsLater(delayS+5,message.from_user.id,dialog.name, newsText))
+
+
+
+        elif text=="":                                                                              #send all news
+            print("All news weare sended to grpous.")
+            if not await allreadyConneted():
+                await start()
+
+            for newsText in news_array:
                 await client.send_message('me', 'Starting sending news:\n'+newsText)
+                previusGroupName=""
                 async for dialog in client.iter_dialogs():
-                    if dialog.is_group:
-                        print("sending news to dialog.name "+dialog.name)
+                    if dialog.is_group and not previusGroupName==dialog.name:
+                        previusGroupName=dialog.name
+                        print("sending news to dialog.name"+dialog.name)                          
                         await bot.send_message(message.from_user.id,'Sending to: '+dialog.name+"\n")
                         await asyncio.sleep(1) 
                         try:
@@ -255,26 +290,13 @@ async def sendall(message: types.Message):
                             print('Sended.')
                         except Exception as e:
                             await bot.send_message(message.from_user.id,f'Error: {e}\n')
-                            print(f'Error during sending : {e}')
+                            if str(e)[:10]=="A wait of ":
+                               delayS=int(str(e)[10:].split(" ")[0])
+                               sendLaterTast = asyncio.create_task(sendNewsLater(delayS+5,message.from_user.id,dialog.name, newsText))
+                            #print(f'Error during sending : {e}')
 
-
-        elif text=="":                                                                              #send all news
-            print("All news weare sended to grpous.")
-            async with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
-                 for newsText in news_array:
-                    await client.send_message('me', 'Starting sending news:\n'+newsText)
-                    async for dialog in client.iter_dialogs():
-                        if dialog.is_group:
-                            print("sending news to dialog.name"+dialog.name)                          
-                            await bot.send_message(message.from_user.id,'Sended to: '+dialog.name+"\n")
-                            await asyncio.sleep(1) 
-                            try:
-                                await client.send_message(dialog.name, newsText)
-                                await bot.send_message(message.from_user.id,'Sended\n')
-                                print('Sended.')
-                            except Exception as e:
-                                await bot.send_message(message.from_user.id,f'Error: {e}\n')
-                                print(f'Error during sending : {e}')
+            
+          
 
         
         else:
@@ -282,17 +304,55 @@ async def sendall(message: types.Message):
 
 
 
+async def sendNewsLater(delay,botUserId, dialogName, dalayedNewsText):
+    print("'"+dalayedNewsText+"' will sending into '"+dialogName+"' and will reporting to bot user: "+str(botUserId))
+    await asyncio.sleep(delay)
+    global client
 
+    if not await allreadyConneted():
+        await start()
+
+    try:
+        print("trying sending '"+dalayedNewsText+"' into '"+dialogName+"' and will reporting to bot user: "+str(botUserId))
+        async for dialog in client.iter_dialogs():
+            if dialog.is_group and dialog.name==dialogName:
+                await client.send_message(dialog.name, dalayedNewsText)
+                break
+        await bot.send_message(botUserId,'Sended\n')
+        print('Delayed message sended.')
+    except Exception as e:
+        await bot.send_message(botUserId,f'Error during delayed sending: {e}\n')
+        if str(e)[:10]=="A wait of ":
+            delayS=int(str(e)[10:].split(" ")[0])
+            sendLaterTast = asyncio.create_task(sendNewsLater(delayS+5,botUserId,dialogName, dalayedNewsText))
+        else:
+           print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print(f'Error during delayed sending: {e}')
 
 
 async def start():
+    global client
     await client.send_message('me', 'Starting!')
 
+async def allreadyConneted():
+    global client
+    try:
+        print(client)
+        return True
+    except Exception:
+        print('Disconnected trying connect...')
+        await conntectTgClinet()
+        return False
 
 
-
-with TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM") as client:
-   client.loop.run_until_complete(start())
+async def conntectTgClinet():
+    clientConnection=TelegramClient(TG_USER_API_NAME, TG_USER_API_ID, TG_USER_API_HASH, system_version="4.16.30-vxCUSTOM")
+    try:
+        await clientConnection.connect()
+    except OSError:
+        print('Failed to connect')
+    global client
+    client=clientConnection
 
 
 
