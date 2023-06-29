@@ -231,6 +231,10 @@ async def new_chat_members(message: types.Message):
             addChatID(message.chat.id)
             
 
+def cutStr(str, numChars):
+    if len(str)>numChars:
+        str=str[:(numChars-3)]+"..."
+    return str
 
 
 
@@ -241,14 +245,14 @@ async def sendall(message: types.Message):
         global news_array
         global client
         if text!="" and int(text)>0 and int(text)<=len(news_array):                                 #send one news
-            print("News "+ text + " weare sended to grpous.")
+            print("News "+ cutStr(str(text),10) + " weare sended to grpous.")
             if not await allreadyConneted():
                 await start()
 
             #await asyncio.sleep(3) 
 
             newsText=news_array[int(text)-1];
-            await client.send_message('me', 'Starting sending news:\n'+newsText)
+            await client.send_message('me', 'Starting sending: \n'+cutStr(str(newsText),45))
             previusGroupName=""
             async for dialog in client.iter_dialogs():
                 #print("+++dialog.name"+dialog.name)
@@ -256,17 +260,20 @@ async def sendall(message: types.Message):
                     #print("----dialog.name"+dialog.name)
                     previusGroupName=dialog.name
                     #print("sending news to dialog.name "+dialog.name)
-                    await bot.send_message(message.from_user.id,'Sending to: '+dialog.name+"\n")
+                    await bot.send_message(message.from_user.id,'Sending to: '+cutStr(str(dialog.name),30)+"\n")
                     await asyncio.sleep(1) 
                     try:
                         await client.send_message(dialog.name, newsText)
                         await bot.send_message(message.from_user.id,'Sended\n')
                         print('Sended.')
                     except Exception as e:
-                        await bot.send_message(message.from_user.id,f'Error: {e}\n')
                         if str(e)[:10]=="A wait of ":
                            delayS=int(str(e)[10:].split(" ")[0])
+                           await bot.send_message(message.from_user.id,'Need to wait '+str(delayS)+"s, to send to "+cutStr(str(dialog.name),13))
                            sendLaterTast = asyncio.create_task(sendNewsLater(delayS+5,message.from_user.id,dialog.name, newsText))
+                        else:
+                          await bot.send_message(message.from_user.id,f'Error?: {e}\n')
+
 
 
 
@@ -276,24 +283,25 @@ async def sendall(message: types.Message):
                 await start()
 
             for newsText in news_array:
-                await client.send_message('me', 'Starting sending news:\n'+newsText)
+                await client.send_message('me', 'Starting sending: \n'+cutStr(str(newsText),45))
                 previusGroupName=""
                 async for dialog in client.iter_dialogs():
                     if dialog.is_group and not previusGroupName==dialog.name:
                         previusGroupName=dialog.name
-                        print("sending news to dialog.name"+dialog.name)                          
-                        await bot.send_message(message.from_user.id,'Sending to: '+dialog.name+"\n")
+                        print("sending news to dialog.name: "+cutStr(str(dialog.name),15))
+                        await bot.send_message(message.from_user.id,'Sending to: '+cutStr(str(dialog.name),30)+"\n")
                         await asyncio.sleep(1) 
                         try:
                             await client.send_message(dialog.name, newsText)
                             await bot.send_message(message.from_user.id,'Sended\n')
                             print('Sended.')
                         except Exception as e:
-                            await bot.send_message(message.from_user.id,f'Error: {e}\n')
                             if str(e)[:10]=="A wait of ":
                                delayS=int(str(e)[10:].split(" ")[0])
+                               await bot.send_message(message.from_user.id,'Need wait '+str(delayS)+"s, to send to "+cutStr(str(dialog.name),15))
                                sendLaterTast = asyncio.create_task(sendNewsLater(delayS+5,message.from_user.id,dialog.name, newsText))
-                            #print(f'Error during sending : {e}')
+                            else:
+                               await bot.send_message(message.from_user.id,f'Error?: {e}\n')
 
             
           
@@ -303,9 +311,8 @@ async def sendall(message: types.Message):
             await message.reply("Номер вакансии не может быть больше имеющегося числа вакансий. Пример команды: \n/sendall 1")
 
 
-
 async def sendNewsLater(delay,botUserId, dialogName, dalayedNewsText):
-    print("'"+dalayedNewsText+"' will sending into '"+dialogName+"' and will reporting to bot user: "+str(botUserId))
+    print("'"+dalayedNewsText[:15]+"' will sending into '"+cutStr(str(dialogName),13)+"' after "+str(delay)+" sec.")
     await asyncio.sleep(delay)
     global client
 
@@ -313,7 +320,7 @@ async def sendNewsLater(delay,botUserId, dialogName, dalayedNewsText):
         await start()
 
     try:
-        print("trying sending '"+dalayedNewsText+"' into '"+dialogName+"' and will reporting to bot user: "+str(botUserId))
+        print("trying sending '"+cutStr(str(dalayedNewsText),15)+"' to '"+cutStr(str(dialogName),13)+"'")
         async for dialog in client.iter_dialogs():
             if dialog.is_group and dialog.name==dialogName:
                 await client.send_message(dialog.name, dalayedNewsText)
@@ -321,13 +328,13 @@ async def sendNewsLater(delay,botUserId, dialogName, dalayedNewsText):
         await bot.send_message(botUserId,'Sended\n')
         print('Delayed message sended.')
     except Exception as e:
-        await bot.send_message(botUserId,f'Error during delayed sending: {e}\n')
         if str(e)[:10]=="A wait of ":
             delayS=int(str(e)[10:].split(" ")[0])
+            await bot.send_message(botUserId,'Need wait '+str(delayS)+"s, to send to "+cutStr(str(dialogName),15))
             sendLaterTast = asyncio.create_task(sendNewsLater(delayS+5,botUserId,dialogName, dalayedNewsText))
         else:
-           print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print(f'Error during delayed sending: {e}')
+           print(f'Some kind of error:  {e}')
+           await bot.send_message(botUserId,f'Error during delayed sending: {e}\n')           
 
 
 async def start():
